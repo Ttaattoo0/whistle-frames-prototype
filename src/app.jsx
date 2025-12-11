@@ -1,47 +1,47 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { 
-  Play, 
   ArrowUpRight, 
   Instagram, 
   Youtube, 
-  Twitter,
+  Disc, // Used for Discord placeholder if needed, or we use a custom SVG/Lucide
+  Gamepad2, // Using Gamepad2 as a Discord alternative if specific icon missing, or standard Lucide
   Aperture, 
   Zap, 
   Music, 
   Layers,
-  Menu,
-  X,
   ChevronDown,
   Volume2,
   VolumeX,
-  MousePointer2,
-  CheckCircle2,
   Sparkles,
   Cpu,
-  Wand2,
   Loader2,
-  Film,
-  Lightbulb,
   Workflow,
-  Disc,
   Share2,
-  MoveHorizontal,
-  Scissors,
-  Repeat,
+  Monitor,
   Wifi,
-  Monitor
+  Scissors,
+  CheckCircle2
 } from 'lucide-react';
 
+// --- CONFIGURATION ---
+// ⚠️ REPLACE THIS WITH YOUR REAL GEMINI API KEY FOR THE ENHANCE BUTTON TO WORK
+const GEMINI_API_KEY = ""; 
+
 // --- API HELPER FUNCTIONS ---
-// UPDATED: Now calls the local backend proxy (/api/generate)
-// instead of exposing the API key directly in the browser.
 const generateGeminiContent = async (prompt) => {
+  if (!GEMINI_API_KEY) {
+    console.warn("Missing Gemini API Key");
+    return "API Key missing. Please configure the Neural Link.";
+  }
+
   try {
-    const response = await fetch('/api/generate', {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt: prompt }), // Backend expects 'prompt' in body
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }]
+      })
     });
     
     if (!response.ok) throw new Error("API call failed");
@@ -53,6 +53,13 @@ const generateGeminiContent = async (prompt) => {
     return "Transmission failed. Neural link unstable. Please try again.";
   }
 };
+
+// --- CUSTOM ICONS ---
+const DiscordIcon = ({ className }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M18.8943 4.34399C17.5139 3.70999 16.0597 3.25099 14.5443 3.00099C14.5443 3.00099 14.2697 3.49999 14.0697 3.96699C12.4283 3.72299 10.7957 3.72299 9.16571 3.96699C8.96571 3.49999 8.67971 3.00099 8.67971 3.00099C7.16286 3.25099 5.71014 3.70999 4.33129 4.34399C1.55271 8.46899 0.792429 12.506 1.17129 16.488C2.84271 17.726 4.46271 18.477 6.04971 18.965C6.43571 18.44 6.77971 17.883 7.07271 17.301C6.49571 17.086 5.94271 16.818 5.41971 16.512C5.55829 16.41 5.69414 16.3021 5.82714 16.191C9.07971 17.697 12.6397 17.697 15.8611 16.191C15.9969 16.303 16.1331 16.411 16.2743 16.512C15.7483 16.82 15.1927 17.088 14.6127 17.301C14.9057 17.884 15.2497 18.441 15.6357 18.965C17.2241 18.477 18.8443 17.726 20.5183 16.488C20.9757 11.957 19.9571 7.95099 18.8943 4.34399ZM8.24129 13.684C7.26129 13.684 6.45829 12.783 6.45829 11.68C6.45829 10.577 7.24129 9.67699 8.24129 9.67699C9.25271 9.67699 10.0543 10.577 10.0343 11.68C10.0343 12.783 9.24129 13.684 8.24129 13.684ZM15.0011 13.684C14.0211 13.684 13.2183 12.783 13.2183 11.68C13.2183 10.577 14.0011 9.67699 15.0011 9.67699C16.0127 9.67699 16.8143 10.577 16.7943 11.68C16.7943 12.783 16.0127 13.684 15.0011 13.684Z" fill="currentColor"/>
+  </svg>
+);
 
 // --- NETWORK BACKGROUND (PLEXUS EFFECT) ---
 const NetworkBackground = () => {
@@ -159,10 +166,15 @@ const CustomStyles = () => (
       .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34, 211, 238, 0.3); border-radius: 4px; }
       .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(34, 211, 238, 0.6); }
       .icon-hover-insta:hover path { fill: url(#insta-gradient); stroke: none; }
-      .icon-hover-twitter:hover { color: #1DA1F2; filter: drop-shadow(0 0 8px rgba(29, 161, 242, 0.6)); }
+      .icon-hover-twitter:hover { color: #5865F2; filter: drop-shadow(0 0 8px rgba(88, 101, 242, 0.6)); }
       .icon-hover-youtube:hover { color: #FF0000; filter: drop-shadow(0 0 8px rgba(255, 0, 0, 0.6)); }
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      /* Range Slider CSS */
+      input[type=range]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        pointer-events: none;
+      }
     `}</style>
     <svg width="0" height="0" className="absolute">
       <defs>
@@ -416,6 +428,7 @@ const Services = () => (
 const ColorGradingSection = () => {
     const [sliderPosition, setSliderPosition] = useState(50);
     const containerRef = useRef(null);
+    const [containerWidth, setContainerWidth] = useState(0);
     const isDragging = useRef(false);
   
     const handleMove = (clientX) => {
@@ -427,6 +440,18 @@ const ColorGradingSection = () => {
       }
     };
   
+    // Update container width on resize to ensure inner image matches exactly
+    useEffect(() => {
+        const updateWidth = () => {
+            if (containerRef.current) {
+                setContainerWidth(containerRef.current.clientWidth);
+            }
+        };
+        window.addEventListener('resize', updateWidth);
+        updateWidth();
+        return () => window.removeEventListener('resize', updateWidth);
+    }, []);
+
     const handleMouseDown = () => { isDragging.current = true; };
     const handleMouseUp = () => { isDragging.current = false; };
     const handleMouseMove = (e) => { if (isDragging.current) handleMove(e.clientX); };
@@ -447,31 +472,44 @@ const ColorGradingSection = () => {
                 </h2>
                 <p className="text-gray-400 mt-4 text-sm">Drag the slider to see the transformation.</p>
             </div>
+            
             <div 
                 ref={containerRef}
-                className="relative w-full max-w-5xl mx-auto aspect-video rounded-3xl overflow-hidden border border-white/10 cursor-col-resize select-none shadow-2xl shadow-purple-900/20"
-                onMouseDown={handleMouseDown} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} onMouseMove={handleMouseMove} onTouchStart={handleMouseDown} onTouchEnd={handleMouseUp} onTouchMove={handleTouchMove}
+                className="relative w-full max-w-5xl mx-auto aspect-video rounded-3xl overflow-hidden border border-white/10 cursor-col-resize select-none shadow-2xl shadow-purple-900/20 group"
+                onMouseDown={handleMouseDown} 
+                onMouseUp={handleMouseUp} 
+                onMouseLeave={handleMouseUp} 
+                onMouseMove={handleMouseMove} 
+                onTouchStart={handleMouseDown} 
+                onTouchEnd={handleMouseUp} 
+                onTouchMove={handleTouchMove}
             >
-                {/* AFTER: Enhanced Purple Grade */}
-                <div className="relative w-full h-full">
+                {/* 1. Base Layer (AFTER - Full Width) */}
+                <div className="absolute inset-0 w-full h-full">
                     <img src={imgUrl} alt="Color Graded" className="w-full h-full object-cover" />
-                    {/* Deep purple overlay */}
+                    {/* Visual Effects for 'After' */}
                     <div className="absolute inset-0 bg-purple-700/40 mix-blend-overlay" />
-                    {/* Blue/Cyan tint in shadows */}
                     <div className="absolute inset-0 bg-gradient-to-t from-blue-900/50 to-transparent mix-blend-multiply" />
-                    {/* Highlight punch */}
                     <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-cyan-400/20 mix-blend-screen" />
-                    {/* Contrast boost */}
                     <div className="absolute inset-0" style={{ backdropFilter: 'contrast(1.4) saturate(1.5)' }} />
                     <div className="absolute bottom-6 right-6 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-green-500/30 text-green-400 text-xs font-bold tracking-widest z-10">AFTER: COLOR GRADED</div>
                 </div>
-                {/* BEFORE: Log Profile */}
-                <div className="absolute inset-0 bg-gray-900 overflow-hidden" style={{ width: `${sliderPosition}%`, borderRight: '2px solid white' }}>
-                      <img src={imgUrl} alt="Raw Log" className="absolute inset-0 w-full h-full object-cover max-w-none" style={{ width: containerRef.current ? containerRef.current.clientWidth : '100%', filter: 'grayscale(0.3) contrast(0.85) brightness(0.95) sepia(0.1)' }} />
-                    <div className="absolute inset-0 bg-gray-500/20 mix-blend-lighten pointer-events-none" />
-                    <div className="absolute bottom-6 left-6 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-white/60 text-xs font-bold tracking-widest z-20">BEFORE : RAW LOG</div>
+
+                {/* 2. Overlay Layer (BEFORE - Clipped Width) */}
+                <div 
+                    className="absolute top-0 left-0 h-full overflow-hidden border-r-2 border-white/80" 
+                    style={{ width: `${sliderPosition}%` }}
+                >
+                    {/* IMPORTANT: Inner image must have fixed width matching container to prevent squashing */}
+                    <div style={{ width: containerWidth ? `${containerWidth}px` : '100vw', height: '100%' }} className="relative">
+                        <img src={imgUrl} alt="Raw Log" className="absolute inset-0 w-full h-full object-cover" style={{ filter: 'grayscale(0.3) contrast(0.85) brightness(0.95) sepia(0.1)' }} />
+                        <div className="absolute inset-0 bg-gray-500/20 mix-blend-lighten pointer-events-none" />
+                        <div className="absolute bottom-6 left-6 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-white/60 text-xs font-bold tracking-widest z-20">BEFORE : RAW LOG</div>
+                    </div>
                 </div>
-                <div className="absolute top-0 bottom-0 w-1 bg-white cursor-col-resize z-20 flex items-center justify-center shadow-[0_0_15px_rgba(255,255,255,0.8)]" style={{ left: `${sliderPosition}%` }}>
+
+                {/* 3. Slider Handle */}
+                <div className="absolute top-0 bottom-0 w-10 -ml-5 z-30 flex items-center justify-center pointer-events-none" style={{ left: `${sliderPosition}%` }}>
                     <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.5)]">
                         <Scissors className="w-4 h-4 text-black rotate-90" />
                     </div>
@@ -490,8 +528,6 @@ const ShowcaseCarousel = () => {
         { title: "Porsche 911", category: "Automotive Edit", videoUrl: "https://www.dropbox.com/scl/fi/9h8uhfvxjiw27pbqowdcd/Porache-911-car-automobile-edit-reels-aftereffects-caredit-editing-drift-drifting-cartok-1.mp4?rlkey=wqkifqnhqafaihvs48raratp6&st=pml7yswj&raw=1" }
     ];
     
-    // REDUCED DUPLICATION: Use 4 sets instead of 30 to improve performance (total 12 videos)
-    // This reduces the number of simultaneous players drastically.
     const projects = useMemo(() => Array(4).fill(rawProjects).flat(), []);
 
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -501,17 +537,15 @@ const ShowcaseCarousel = () => {
     const [mutedStates, setMutedStates] = useState(projects.map(() => true));
 
     useEffect(() => {
-        let isMounted = true; // Flag to track if this specific effect cycle is still valid
+        let isMounted = true; 
 
         const handleSlideChange = async () => {
-            // 1. Immediately pause all other videos to free up browser resources
             videoRefs.current.forEach((vid, idx) => {
                 if (vid && idx !== currentIndex && !vid.paused) {
                     vid.pause();
                 }
             });
 
-            // 2. Scroll container
             if (containerRef.current) {
                 const container = containerRef.current;
                 const videoCard = container.children[currentIndex];
@@ -521,42 +555,30 @@ const ShowcaseCarousel = () => {
                 }
             }
 
-            // 3. Wait for scroll/render settlement
             await new Promise(r => setTimeout(r, 500));
 
-            // CRITICAL FIX: If the user switched slides during the wait, STOP.
-            // This prevents us from calling play() on a video that another effect cycle just paused.
             if (!isMounted) return;
 
-            // 4. Play active video with robust error handling
             const currentVideo = videoRefs.current[currentIndex];
             if (currentVideo) {
                 try {
-                    // Ensure mute state matches state (vital for autoplay)
                     currentVideo.muted = mutedStates[currentIndex];
-
                     const playPromise = currentVideo.play();
                     if (playPromise !== undefined) {
                         playPromise.catch(error => {
-                            // Silently handle autoplay blocks or aborts (user navigated away)
-                            if (error.name !== 'AbortError') {
-                                // console.log("Autoplay prevented:", error); 
-                            }
+                            if (error.name !== 'AbortError') { }
                         });
                     }
-                } catch (e) {
-                    // Ignore general playback setup errors
-                }
+                } catch (e) {}
             }
         };
 
         handleSlideChange();
 
-        // Cleanup function: If currentIndex changes, mark this effect cycle as stale
         return () => {
             isMounted = false;
         };
-    }, [currentIndex]); // Intentionally removed mutedStates to avoid loop
+    }, [currentIndex]); 
 
     const handleTimeUpdate = (index) => {
         const vid = videoRefs.current[index];
@@ -567,20 +589,13 @@ const ShowcaseCarousel = () => {
         }
     };
 
-    // FIXED: Added error handling for the play() promise here
     const handleVideoEnded = (e, index) => {
-        // Loop the current video immediately
         e.target.currentTime = 0;
-        
-        // Wrap play() in a check to catch AbortErrors if user swipes away immediately
         const playPromise = e.target.play();
         if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                // Ignore AbortError which happens if video is paused/unmounted quickly
-            });
+            playPromise.catch(() => {});
         }
 
-        // Only advance if this is the active video
         if (index === currentIndex) {
             if (currentIndex < projects.length - 1) {
                 setCurrentIndex((prev) => prev + 1);
@@ -629,7 +644,6 @@ const ShowcaseCarousel = () => {
                         <video 
                             ref={el => videoRefs.current[index] = el} 
                             src={project.videoUrl} 
-                            // SMART LOADING: Only preload active and next video
                             preload={index === currentIndex || index === currentIndex + 1 ? "auto" : "none"}
                             className="w-full h-full object-cover transform-gpu" 
                             muted={mutedStates[index]} 
@@ -666,8 +680,9 @@ const ShowcaseCarousel = () => {
 const Contact = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedService, setSelectedService] = useState("Select Service Requirement");
-  const [briefText, setBriefText] = useState("");
+  const [formData, setFormData] = useState({ name: '', email: '', brief: '' });
   const [enhancing, setEnhancing] = useState(false);
+  const [status, setStatus] = useState(null); // null, 'sending', 'success', 'error'
   const dropdownRef = useRef(null);
   const serviceOptions = ["Select Service Requirement", "Speed Ramp Edits", "AMV Edits", "Automotive Edits", "Bike Edits", "Personal Edits", "Photo Edits", "Content Creations", "Script Writing", "Sound Effects SFX", "Visual Effects VFX", "Other"];
 
@@ -681,12 +696,52 @@ const Contact = () => {
 
   const handleEnhanceBrief = async (e) => {
     e.preventDefault();
-    if (!briefText || briefText.length < 5) return;
+    if (!formData.brief || formData.brief.length < 5) return;
     setEnhancing(true);
-    const systemPrompt = "Rewrite the user's notes into a clean, professional video production brief. Output STRICTLY plain text only.";
-    const enhanced = await generateGeminiContent(`${systemPrompt}\n\nUser Notes: ${briefText}`);
-    setBriefText(enhanced);
+    const systemPrompt = "Rewrite the user's notes into a clean, professional video production brief. Output STRICTLY plain text only. Keep it concise.";
+    const enhanced = await generateGeminiContent(`${systemPrompt}\n\nUser Notes: ${formData.brief}`);
+    setFormData(prev => ({ ...prev, brief: enhanced }));
     setEnhancing(false);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (selectedService === "Select Service Requirement") {
+        alert("Please select a service.");
+        return;
+    }
+    setStatus('sending');
+
+    // Using FormSubmit.co for direct email without backend code
+    try {
+        const response = await fetch("https://formsubmit.co/ajax/bgmringtone360@gmail.com", {
+            method: "POST",
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                _subject: `New Collaboration: ${selectedService}`,
+                _replyto: formData.email, // Allows reply directly to client
+                name: formData.name,
+                email: formData.email,
+                service: selectedService,
+                brief: formData.brief,
+                _template: "table"
+            })
+        });
+
+        if (response.ok) {
+            setStatus('success');
+            setFormData({ name: '', email: '', brief: '' });
+            setSelectedService("Select Service Requirement");
+        } else {
+            setStatus('error');
+        }
+    } catch (error) {
+        console.error("Email failed", error);
+        setStatus('error');
+    }
   };
 
   return (
@@ -694,19 +749,50 @@ const Contact = () => {
       <div className="w-full max-w-2xl bg-black/40 backdrop-blur-xl border border-white/10 rounded-3xl p-8 md:p-12 relative overflow-hidden">
         <div className="absolute top-0 left-0 w-32 h-32 bg-cyan-500/20 rounded-full blur-[80px]" />
         <div className="absolute bottom-0 right-0 w-32 h-32 bg-purple-500/20 rounded-full blur-[80px]" />
+        
         <div className="text-center mb-10">
           <h2 className="text-4xl font-bold text-white mb-2">Initialize Collaboration</h2>
           <p className="text-blue-200/50">Transmission secure. Brief us on your objective.</p>
         </div>
-        <form className="space-y-4 relative z-10">
-          <div className="group"><input type="text" placeholder="Identity" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white placeholder:text-white/20 focus:outline-none focus:border-cyan-500/50 focus:bg-white/10 transition-all" /></div>
-          <div className="group"><input type="email" placeholder="Frequency (Email)" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white placeholder:text-white/20 focus:outline-none focus:border-cyan-500/50 focus:bg-white/10 transition-all" /></div>
-          <div className="group relative" ref={dropdownRef}>
-            <div onClick={() => setIsOpen(!isOpen)} className={`w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white/80 cursor-pointer flex justify-between items-center transition-all ${isOpen ? 'border-cyan-500/50 bg-white/10' : 'hover:bg-white/10'}`}>
+
+        {status === 'success' ? (
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-12">
+                <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-green-500/50">
+                    <CheckCircle2 className="w-8 h-8 text-green-500" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-2">Transmission Received</h3>
+                <p className="text-gray-400">We have received your brief. A signal will be sent to your inbox shortly.</p>
+                <button onClick={() => setStatus(null)} className="mt-8 text-cyan-400 hover:text-cyan-300 text-sm font-bold uppercase tracking-widest">Send Another</button>
+            </motion.div>
+        ) : (
+            <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
+            <div className="group">
+                <input 
+                    type="text" 
+                    placeholder="Identity (Name)" 
+                    required
+                    value={formData.name}
+                    onChange={e => setFormData({...formData, name: e.target.value})}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white placeholder:text-white/20 focus:outline-none focus:border-cyan-500/50 focus:bg-white/10 transition-all" 
+                />
+            </div>
+            <div className="group">
+                <input 
+                    type="email" 
+                    placeholder="Frequency (Email)" 
+                    required
+                    value={formData.email}
+                    onChange={e => setFormData({...formData, email: e.target.value})}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white placeholder:text-white/20 focus:outline-none focus:border-cyan-500/50 focus:bg-white/10 transition-all" 
+                />
+            </div>
+            
+            <div className="group relative" ref={dropdownRef}>
+                <div onClick={() => setIsOpen(!isOpen)} className={`w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white/80 cursor-pointer flex justify-between items-center transition-all ${isOpen ? 'border-cyan-500/50 bg-white/10' : 'hover:bg-white/10'}`}>
                 <span className={selectedService === "Select Service Requirement" ? "text-white/50" : "text-white"}>{selectedService}</span>
                 <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isOpen ? 'rotate-180 text-cyan-400' : 'text-white/40'}`} />
-            </div>
-            <AnimatePresence>
+                </div>
+                <AnimatePresence>
                 {isOpen && (
                     <motion.div initial={{ opacity: 0, y: -10, scaleY: 0.95 }} animate={{ opacity: 1, y: 0, scaleY: 1 }} exit={{ opacity: 0, y: -10, scaleY: 0.95 }} transition={{ duration: 0.2 }} className="absolute top-full left-0 right-0 mt-2 bg-black/90 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden z-50 max-h-60 overflow-y-auto custom-scrollbar shadow-xl shadow-cyan-900/20">
                         {serviceOptions.filter(opt => opt !== "Select Service Requirement").map((option, index) => (
@@ -714,22 +800,39 @@ const Contact = () => {
                         ))}
                     </motion.div>
                 )}
-            </AnimatePresence>
-          </div>
-          <div className="group relative">
-            <div className="flex justify-between items-center mb-2 px-1">
-              <span className="text-xs text-gray-500 uppercase tracking-widest">Mission Brief</span>
-              <button onClick={handleEnhanceBrief} disabled={enhancing || !briefText} className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 transition-colors disabled:opacity-50">
-                {enhancing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />} ✨ Auto-Enhance Brief
-              </button>
+                </AnimatePresence>
             </div>
-            <textarea rows="4" value={briefText} onChange={(e) => setBriefText(e.target.value)} placeholder="Describe your vision (e.g. 'Car video, fast edits, dark mode')..." className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white placeholder:text-white/20 focus:outline-none focus:border-cyan-500/50 focus:bg-white/10 transition-all resize-none custom-scrollbar" />
-          </div>
-          <button className="w-full bg-white text-black font-bold py-4 rounded-xl hover:bg-cyan-400 transition-colors flex items-center justify-center gap-2 mt-4">SEND TRANSMISSION <ArrowUpRight className="w-5 h-5" /></button>
-        </form>
+
+            <div className="group relative">
+                <div className="flex justify-between items-center mb-2 px-1">
+                <span className="text-xs text-gray-500 uppercase tracking-widest">Mission Brief</span>
+                <button onClick={handleEnhanceBrief} disabled={enhancing || !formData.brief} type="button" className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 transition-colors disabled:opacity-50">
+                    {enhancing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />} ✨ Auto-Enhance Brief
+                </button>
+                </div>
+                <textarea 
+                    rows="4" 
+                    value={formData.brief} 
+                    onChange={(e) => setFormData({...formData, brief: e.target.value})} 
+                    placeholder="Describe your vision (e.g. 'Car video, fast edits, dark mode')..." 
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-white placeholder:text-white/20 focus:outline-none focus:border-cyan-500/50 focus:bg-white/10 transition-all resize-none custom-scrollbar" 
+                />
+            </div>
+
+            <button disabled={status === 'sending'} className="w-full bg-white text-black font-bold py-4 rounded-xl hover:bg-cyan-400 transition-colors flex items-center justify-center gap-2 mt-4 disabled:opacity-50 disabled:cursor-not-allowed">
+                {status === 'sending' ? (
+                    <>TRANSMITTING... <Loader2 className="w-5 h-5 animate-spin" /></>
+                ) : (
+                    <>SEND TRANSMISSION <ArrowUpRight className="w-5 h-5" /></>
+                )}
+            </button>
+            {status === 'error' && <p className="text-red-500 text-center text-xs mt-2">Transmission failed. Neural link unstable.</p>}
+            </form>
+        )}
+
         <div className="flex justify-center gap-8 mt-12 pt-8 border-t border-white/5 text-white/40">
-          <a href="https://www.instagram.com/_niru.edits?igsh=MXF5MGdkaWE4dzNqNA==" target="_blank" rel="noopener noreferrer" className="icon-hover-insta transition-all duration-300"><Instagram className="w-5 h-5 cursor-pointer" /></a>
-          <a href="#" target="_blank" rel="noopener noreferrer" className="icon-hover-twitter transition-all duration-300"><Twitter className="w-5 h-5 cursor-pointer" /></a>
+          <a href="https://www.instagram.com/whistle.frames?igsh=MWdxbjVpZWs2ejNtcw==" target="_blank" rel="noopener noreferrer" className="icon-hover-insta transition-all duration-300"><Instagram className="w-5 h-5 cursor-pointer" /></a>
+          <a href="#" target="_blank" rel="noopener noreferrer" className="icon-hover-twitter transition-all duration-300"><DiscordIcon className="w-5 h-5 cursor-pointer" /></a>
           <a href="https://www.youtube.com/@niruedits/featured" target="_blank" rel="noopener noreferrer" className="icon-hover-youtube transition-all duration-300"><Youtube className="w-5 h-5 cursor-pointer" /></a>
         </div>
       </div>
@@ -750,7 +853,6 @@ const Footer = () => (
 export default function App() {
   const [introComplete, setIntroComplete] = useState(false);
 
-  // FIX: Force scroll to top when intro completes using setTimeout to wait for layout
   useEffect(() => {
     if (introComplete) {
       setTimeout(() => {
