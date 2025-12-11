@@ -24,15 +24,15 @@ import {
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
-// This safely loads the key from your .env file.
-// The optional chaining (?.) prevents errors if the environment isn't fully loaded yet.
-const GEMINI_API_KEY = import.meta.env?.VITE_GEMINI_API_KEY || ""; 
+// This line automatically pulls the key from your .env file
+// If you see a warning in the preview about import.meta, ignore it. It works locally.
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || ""; 
 
 // --- API HELPER FUNCTIONS ---
 const generateGeminiContent = async (prompt) => {
   if (!GEMINI_API_KEY) {
     console.warn("Missing Gemini API Key");
-    return "API Key missing. Please configure the Neural Link in .env or Netlify.";
+    return "API Key missing. Please configure the Neural Link in .env (local) or Netlify (production).";
   }
 
   try {
@@ -492,7 +492,12 @@ const ColorGradingSection = () => {
                     <div className="absolute inset-0 bg-gradient-to-t from-blue-900/50 to-transparent mix-blend-multiply" />
                     <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-cyan-400/20 mix-blend-screen" />
                     <div className="absolute inset-0" style={{ backdropFilter: 'contrast(1.4) saturate(1.5)' }} />
-                    <div className="absolute bottom-6 right-6 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-green-500/30 text-green-400 text-xs font-bold tracking-widest z-10">AFTER: COLOR GRADED</div>
+                    <div 
+                        className="absolute bottom-6 right-6 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-green-500/30 text-green-400 text-xs font-bold tracking-widest z-10"
+                        style={{ opacity: sliderPosition > 95 ? 0 : 1, transition: 'opacity 0.3s ease' }}
+                    >
+                        AFTER: COLOR GRADED
+                    </div>
                 </div>
 
                 {/* 2. Overlay Layer (BEFORE - Clipped Width) */}
@@ -505,7 +510,12 @@ const ColorGradingSection = () => {
                     <div style={{ width: containerWidth ? `${containerWidth}px` : '100vw', height: '100%' }} className="relative">
                         <img src={imgUrl} alt="Raw Log" className="absolute inset-0 w-full h-full object-cover" style={{ filter: 'grayscale(0.3) contrast(0.85) brightness(0.95) sepia(0.1)' }} />
                         <div className="absolute inset-0 bg-gray-500/20 mix-blend-lighten pointer-events-none" />
-                        <div className="absolute bottom-6 left-6 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-white/60 text-xs font-bold tracking-widest z-20">BEFORE : RAW LOG</div>
+                        <div 
+                            className="absolute bottom-6 left-6 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-white/60 text-xs font-bold tracking-widest z-20"
+                            style={{ opacity: sliderPosition < 5 ? 0 : 1, transition: 'opacity 0.3s ease' }}
+                        >
+                            BEFORE : RAW LOG
+                        </div>
                     </div>
                 </div>
 
