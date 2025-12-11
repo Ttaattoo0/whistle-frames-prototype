@@ -24,19 +24,20 @@ import {
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
-// This line automatically pulls the key from your .env file
-// If you see a warning in the preview about import.meta, ignore it. It works locally.
+// This properly loads the key from your .env file in a Vite environment.
+// We removed the optional chaining (?.) to ensure compatibility.
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || ""; 
 
 // --- API HELPER FUNCTIONS ---
 const generateGeminiContent = async (prompt) => {
   if (!GEMINI_API_KEY) {
     console.warn("Missing Gemini API Key");
-    return "API Key missing. Please configure the Neural Link in .env (local) or Netlify (production).";
+    return "API Key missing. Please configure the Neural Link in .env or Netlify.";
   }
 
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+    // Uses the stable gemini-1.5-flash model
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -44,7 +45,11 @@ const generateGeminiContent = async (prompt) => {
       })
     });
     
-    if (!response.ok) throw new Error("API call failed");
+    if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Gemini API Error Details:", errorData);
+        throw new Error(`API Error: ${response.status}`);
+    }
     
     const data = await response.json();
     return data.candidates?.[0]?.content?.parts?.[0]?.text || "No creative data received.";
@@ -144,16 +149,6 @@ const NetworkBackground = () => {
 
   return <canvas ref={canvasRef} className="fixed inset-0 z-[-10] bg-black" />;
 };
-
-// --- Custom Logo ---
-const CustomLogo = () => (
-  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M16 4L28 28H4L16 4Z" stroke="white" strokeWidth="2" />
-    <path d="M16 10L22 24H10L16 10Z" fill="white" fillOpacity="0.2" />
-    <path d="M16 4V28" stroke="white" strokeWidth="1" strokeOpacity="0.5" />
-    <circle cx="16" cy="18" r="2" fill="#22d3ee" />
-  </svg>
-);
 
 // --- CSS ---
 const CustomStyles = () => (
