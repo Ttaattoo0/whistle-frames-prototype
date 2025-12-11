@@ -4,8 +4,7 @@ import {
   ArrowUpRight, 
   Instagram, 
   Youtube, 
-  Disc, // Used for Discord placeholder if needed, or we use a custom SVG/Lucide
-  Gamepad2, // Using Gamepad2 as a Discord alternative if specific icon missing, or standard Lucide
+  Disc, 
   Aperture, 
   Zap, 
   Music, 
@@ -25,14 +24,15 @@ import {
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
-// ⚠️ REPLACE THIS WITH YOUR REAL GEMINI API KEY FOR THE ENHANCE BUTTON TO WORK
-const GEMINI_API_KEY = ""; 
+// This safely loads the key from your .env file.
+// The optional chaining (?.) prevents errors if the environment isn't fully loaded yet.
+const GEMINI_API_KEY = import.meta.env?.VITE_GEMINI_API_KEY || ""; 
 
 // --- API HELPER FUNCTIONS ---
 const generateGeminiContent = async (prompt) => {
   if (!GEMINI_API_KEY) {
     console.warn("Missing Gemini API Key");
-    return "API Key missing. Please configure the Neural Link.";
+    return "API Key missing. Please configure the Neural Link in .env or Netlify.";
   }
 
   try {
@@ -485,7 +485,7 @@ const ColorGradingSection = () => {
                 onTouchMove={handleTouchMove}
             >
                 {/* 1. Base Layer (AFTER - Full Width) */}
-                <div className="absolute inset-0 w-full h-full">
+                <div className="absolute inset-0 w-full h-full z-0">
                     <img src={imgUrl} alt="Color Graded" className="w-full h-full object-cover" />
                     {/* Visual Effects for 'After' */}
                     <div className="absolute inset-0 bg-purple-700/40 mix-blend-overlay" />
@@ -496,11 +496,12 @@ const ColorGradingSection = () => {
                 </div>
 
                 {/* 2. Overlay Layer (BEFORE - Clipped Width) */}
+                {/* UPDATED: Added z-20 so this layer sits ON TOP of the 'After' layer's label (z-10), causing it to properly 'wipe' the text away */}
                 <div 
-                    className="absolute top-0 left-0 h-full overflow-hidden border-r-2 border-white/80" 
+                    className="absolute top-0 left-0 h-full overflow-hidden border-r-2 border-white/80 z-20" 
                     style={{ width: `${sliderPosition}%` }}
                 >
-                    {/* IMPORTANT: Inner image must have fixed width matching container to prevent squashing */}
+                    {/* Inner container to hold fixed image */}
                     <div style={{ width: containerWidth ? `${containerWidth}px` : '100vw', height: '100%' }} className="relative">
                         <img src={imgUrl} alt="Raw Log" className="absolute inset-0 w-full h-full object-cover" style={{ filter: 'grayscale(0.3) contrast(0.85) brightness(0.95) sepia(0.1)' }} />
                         <div className="absolute inset-0 bg-gray-500/20 mix-blend-lighten pointer-events-none" />
