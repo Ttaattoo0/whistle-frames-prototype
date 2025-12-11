@@ -23,45 +23,6 @@ import {
   CheckCircle2
 } from 'lucide-react';
 
-// --- CONFIGURATION ---
-// Safely load the key. Prevents crashes if env vars are missing.
-let GEMINI_API_KEY = "";
-try {
-  GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
-} catch (e) {
-  console.warn("Environment variables not loaded via import.meta");
-}
-
-// --- API HELPER FUNCTIONS ---
-const generateGeminiContent = async (prompt) => {
-  if (!GEMINI_API_KEY) {
-    console.warn("Missing Gemini API Key");
-    return "API Key missing. Please configure the Neural Link in .env or Netlify.";
-  }
-
-  try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }]
-      })
-    });
-    
-    if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Gemini API Error Details:", errorData);
-        throw new Error(`API Error: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || "No creative data received.";
-  } catch (error) {
-    console.error("Gemini Error:", error);
-    return "Transmission failed. Neural link unstable. Please try again.";
-  }
-};
-
 // --- CUSTOM ICONS ---
 // Defined at the top to prevent ReferenceError
 const CustomLogo = () => (
@@ -699,7 +660,6 @@ const Contact = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedService, setSelectedService] = useState("Select Service Requirement");
   const [formData, setFormData] = useState({ name: '', email: '', brief: '' });
-  const [enhancing, setEnhancing] = useState(false);
   const [status, setStatus] = useState(null); // null, 'sending', 'success', 'error'
   const dropdownRef = useRef(null);
   const serviceOptions = ["Select Service Requirement", "Speed Ramp Edits", "AMV Edits", "Automotive Edits", "Bike Edits", "Personal Edits", "Photo Edits", "Content Creations", "Script Writing", "Sound Effects SFX", "Visual Effects VFX", "Other"];
@@ -711,16 +671,6 @@ const Contact = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const handleEnhanceBrief = async (e) => {
-    e.preventDefault();
-    if (!formData.brief || formData.brief.length < 5) return;
-    setEnhancing(true);
-    const systemPrompt = "Rewrite the user's notes into a clean, professional video production brief. Output STRICTLY plain text only. Keep it concise.";
-    const enhanced = await generateGeminiContent(`${systemPrompt}\n\nUser Notes: ${formData.brief}`);
-    setFormData(prev => ({ ...prev, brief: enhanced }));
-    setEnhancing(false);
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -824,9 +774,6 @@ const Contact = () => {
             <div className="group relative">
                 <div className="flex justify-between items-center mb-2 px-1">
                 <span className="text-xs text-gray-500 uppercase tracking-widest">Mission Brief</span>
-                <button onClick={handleEnhanceBrief} disabled={enhancing || !formData.brief} type="button" className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 transition-colors disabled:opacity-50">
-                    {enhancing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />} ✨ Auto-Enhance Brief
-                </button>
                 </div>
                 <textarea 
                     rows="4" 
