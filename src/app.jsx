@@ -22,9 +22,9 @@ import {
   Scissors,
   CheckCircle2
 } from 'lucide-react';
+
 // --- CONFIGURATION ---
-// Safely load the key. If import.meta.env exists, use it. Otherwise, empty string.
-// This prevents "Blank Screen" crashes in production.
+// Safely load the key. Prevents crashes if env vars are missing.
 let GEMINI_API_KEY = "";
 try {
   GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
@@ -40,7 +40,6 @@ const generateGeminiContent = async (prompt) => {
   }
 
   try {
-    // Uses the stable gemini-1.5-flash model
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -64,6 +63,16 @@ const generateGeminiContent = async (prompt) => {
 };
 
 // --- CUSTOM ICONS ---
+// Defined at the top to prevent ReferenceError
+const CustomLogo = () => (
+  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M16 4L28 28H4L16 4Z" stroke="white" strokeWidth="2" />
+    <path d="M16 10L22 24H10L16 10Z" fill="white" fillOpacity="0.2" />
+    <path d="M16 4V28" stroke="white" strokeWidth="1" strokeOpacity="0.5" />
+    <circle cx="16" cy="18" r="2" fill="#22d3ee" />
+  </svg>
+);
+
 const DiscordIcon = ({ className }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M18.8943 4.34399C17.5139 3.70999 16.0597 3.25099 14.5443 3.00099C14.5443 3.00099 14.2697 3.49999 14.0697 3.96699C12.4283 3.72299 10.7957 3.72299 9.16571 3.96699C8.96571 3.49999 8.67971 3.00099 8.67971 3.00099C7.16286 3.25099 5.71014 3.70999 4.33129 4.34399C1.55271 8.46899 0.792429 12.506 1.17129 16.488C2.84271 17.726 4.46271 18.477 6.04971 18.965C6.43571 18.44 6.77971 17.883 7.07271 17.301C6.49571 17.086 5.94271 16.818 5.41971 16.512C5.55829 16.41 5.69414 16.3021 5.82714 16.191C9.07971 17.697 12.6397 17.697 15.8611 16.191C15.9969 16.303 16.1331 16.411 16.2743 16.512C15.7483 16.82 15.1927 17.088 14.6127 17.301C14.9057 17.884 15.2497 18.441 15.6357 18.965C17.2241 18.477 18.8443 17.726 20.5183 16.488C20.9757 11.957 19.9571 7.95099 18.8943 4.34399ZM8.24129 13.684C7.26129 13.684 6.45829 12.783 6.45829 11.68C6.45829 10.577 7.24129 9.67699 8.24129 9.67699C9.25271 9.67699 10.0543 10.577 10.0343 11.68C10.0343 12.783 9.24129 13.684 8.24129 13.684ZM15.0011 13.684C14.0211 13.684 13.2183 12.783 13.2183 11.68C13.2183 10.577 14.0011 9.67699 15.0011 9.67699C16.0127 9.67699 16.8143 10.577 16.7943 11.68C16.7943 12.783 16.0127 13.684 15.0011 13.684Z" fill="currentColor"/>
@@ -500,7 +509,6 @@ const ColorGradingSection = () => {
                 </div>
 
                 {/* 2. Overlay Layer (BEFORE - Clipped Width) */}
-                {/* UPDATED: Added z-20 so this layer sits ON TOP of the 'After' layer's label (z-10), causing it to properly 'wipe' the text away */}
                 <div 
                     className="absolute top-0 left-0 h-full overflow-hidden border-r-2 border-white/80 z-20" 
                     style={{ width: `${sliderPosition}%` }}
