@@ -22,11 +22,15 @@ import {
   Scissors,
   CheckCircle2
 } from 'lucide-react';
-
 // --- CONFIGURATION ---
-// This properly loads the key from your .env file in a Vite environment.
-// We removed the optional chaining (?.) to ensure compatibility.
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || ""; 
+// Safely load the key. If import.meta.env exists, use it. Otherwise, empty string.
+// This prevents "Blank Screen" crashes in production.
+let GEMINI_API_KEY = "";
+try {
+  GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
+} catch (e) {
+  console.warn("Environment variables not loaded via import.meta");
+}
 
 // --- API HELPER FUNCTIONS ---
 const generateGeminiContent = async (prompt) => {
